@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(to right, #f0f4f8, #ffffff); padding: 40px; margin: 0;">
+
+  <h2 style="color: #2c3e50; text-align: center; margin-bottom: 30px;">📋 Task Manager Dashboard</h2>
+
+  <div style="text-align: center; margin-bottom: 25px;">
+    <input type="text" id="searchInput" placeholder="Search task..." 
+      style="padding: 10px; width: 220px; border: 1px solid #ccc; border-radius: 6px; margin-right: 10px; font-size: 15px;">
+    
+    <button onclick="performSearch()" 
+      style="padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 6px; margin-right: 10px; cursor: pointer; font-size: 15px;">
+      🔍 Search
+    </button>
+    
+    <select id="filterSelect" style="padding: 10px; border: 1px solid #ccc; border-radius: 6px; margin-right: 10px; font-size: 15px;">
+      <option value="">Filter</option>
+      <option value="asc">Date Asc</option>
+      <option value="desc">Date Desc</option>
+      <option value="pending">Pending</option>
+      <option value="completed">Completed</option>
+      <option value="Low">Low Priority</option>
+      <option value="Medium">Medium Priority</option>
+      <option value="High">High Priority</option>
+    </select>
+    
+    <button onclick="applyFilter()" 
+      style="padding: 10px 15px; background: #9b59b6; color: white; border: none; border-radius: 6px; margin-right: 10px; cursor: pointer; font-size: 15px;">
+      🎯 Filter
+    </button>
+    
+    <button onclick="clearFilters()" 
+      style="padding: 10px 15px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 15px;">
+      🗑️ Clear
+    </button>
+  </div>
+
+  <form id="taskForm" style="text-align: center; margin-bottom: 35px;">
+    <input type="text" id="title" placeholder="Title" required 
+      style="padding: 10px; margin: 5px; border-radius: 6px; border: 1px solid #ccc; width: 160px;">
+    
+    <input type="text" id="desc" placeholder="Description" required 
+      style="padding: 10px; margin: 5px; border-radius: 6px; border: 1px solid #ccc; width: 160px;">
+    
+    <select id="priority" required 
+      style="padding: 10px; margin: 5px; border-radius: 6px; border: 1px solid #ccc; width: 120px;">
+      <option value="">Priority</option>
+      <option value="Low">Low</option>
+      <option value="Medium">Medium</option>
+      <option value="High">High</option>
+    </select>
+    
+    <input type="date" id="date" required 
+      style="padding: 10px; margin: 5px; border-radius: 6px; border: 1px solid #ccc;">
+
+    <button type="submit" 
+      style="padding: 10px 20px; background: #27ae60; color: white; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; transition: background 0.3s;">
+      ➕ Add Task
+    </button>
+  </form>
+
+  <table border="1" cellpadding="10" cellspacing="0" style="
+    width: 100%; 
+    background: white; 
+    border-collapse: collapse; 
+    box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+    font-size: 15px;">
+    
+    <thead style="background: #34495e; color: white;">
+      <tr>
+        <th style="padding: 12px;">Title</th>
+        <th style="padding: 12px;">Description</th>
+        <th style="padding: 12px;">Priority</th>
+        <th style="padding: 12px;">Status</th>
+        <th style="padding: 12px;">Date</th>
+        <th style="padding: 12px;">Actions</th>
+      </tr>
+    </thead>
+    <tbody id="taskTable"></tbody>
+  </table>
+
+  <script>
+    const token = localStorage.getItem('token');
+    let currentSearch = '';
+    let currentFilter = '';
+    let currentSort = '';
+
+    async function fetchTasks(search = '', filter = '', sort = '') {
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (filter) params.append('filter', filter);
+      if (sort) params.append('sort', sort);
+      
+      const url = `http://localhost:5000/api/tasks${params.toString() ? '?' + params.toString() : ''}`;
+      const res = await fetch(url, {
+        headers: { 'Authorization': token }
+      });
+      const tasks = await res.json();
+      renderTasks(tasks);
+    }
+
+    function performSearch() {
+      const searchTerm = document.getElementById('searchInput').value;
+      currentSearch = searchTerm;
+      fetchTasks(currentSearch, currentFilter, currentSort);
+    }
+
+    function applyFilter() {
+      const filterValue = document.getElementById('filterSelect').value;
+      if (filterValue === 'asc' || filterValue === 'desc') {
+        currentSort = filterValue;
+        currentFilter = '';
+      } else {
+        currentFilter = filterValue;
+        currentSort = '';
+      }
+      fetchTasks(currentSearch, currentFilter, currentSort);
+    }
+
+    function clearFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('filterSelect').value = '';
+      currentSearch = '';
+      currentFilter = '';
+      currentSort = '';
+      fetchTasks();
+    }
+
+    function renderTasks(tasks) {
+      const table = document.getElementById('taskTable');
+      table.innerHTML = '';
+      tasks.forEach(task => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="padding: 10px;">${task.title}</td>
+          <td style="padding: 10px;">${task.desc}</td>
+          <td style="padding: 10px;">${task.priority}</td>
+          <td style="padding: 10px;">${task.status}</td>
+          <td style="padding: 10px;">${task.date ? new Date(task.date).toLocaleDateString() : ''}</td>
+          <td style="padding: 10px;">
+            <button onclick="markComplete('${task._id}')" 
+              style="background: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 5px; margin-right: 5px; cursor: pointer;">
+              ✔
+            </button>
+            <button onclick="deleteTask('${task._id}')" 
+              style="background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer;">
+              🗑
+            </button>
+          </td>`;
+        table.appendChild(row);
+      });
+    }
+
+    // Add keyboard support for search
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        performSearch();
+      }
+    });
+
+    document.getElementById('taskForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const desc = document.getElementById('desc').value;
+      const priority = document.getElementById('priority').value;
+      const date = document.getElementById('date').value;
+
+      await fetch('http://localhost:5000/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({ title, desc, priority, date })
+      });
+      fetchTasks(currentSearch, currentFilter, currentSort);
+      this.reset();
+    });
+
+    async function markComplete(id) {
+      await fetch(`http://localhost:5000/api/tasks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': token },
+        body: JSON.stringify({ status: 'completed' })
+      });
+      fetchTasks(currentSearch, currentFilter, currentSort);
+    }
+
+    async function deleteTask(id) {
+      await fetch(`http://localhost:5000/api/tasks/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': token }
+      });
+      fetchTasks(currentSearch, currentFilter, currentSort);
+    }
+
+    fetchTasks();
+  </script>
+</body>
+</html>

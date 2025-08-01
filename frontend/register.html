@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register</title>
+</head>
+<body style="background: linear-gradient(to right, #dfe9f3, #ffffff); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding-top: 60px;">
+
+  <h2 style="color: #2c3e50; font-size: 32px; margin-bottom: 20px;">🔐 Create Your Account</h2>
+
+  <form id="registerForm" style="max-width: 420px; margin: auto; background: #ffffff; padding: 35px 30px; border-radius: 15px; box-shadow: 0 8px 16px rgba(0,0,0,0.1);">
+    <input type="text" placeholder="Username" name="username" required
+      style="display: block; margin: 15px auto; width: 90%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px;">
+    
+    <input type="email" placeholder="Email" name="email" required
+      style="display: block; margin: 15px auto; width: 90%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px;">
+    
+    <input type="password" placeholder="Password" name="password" required
+      style="display: block; margin: 15px auto; width: 90%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px;">
+    
+    <button type="submit"
+      style="padding: 12px 25px; background: #27ae60; color: white; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; transition: 0.3s;">
+      Register
+    </button>
+  </form>
+
+  <p style="margin-top: 25px; font-size: 15px; color: #555;">
+    Already have an account?
+    <a href="login.html" style="color: #2980b9; text-decoration: none;">Login here</a>
+  </p>
+
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const username = this.username.value;
+      const email = this.email.value;
+      const password = this.password.value;
+
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username, email, password })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert('Registration successful');
+        window.location.href = 'login.html';
+      } else {
+        alert(data.message || 'Error registering');
+      }
+    });
+  </script>
+
+</body>
+</html>
